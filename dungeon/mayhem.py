@@ -66,14 +66,15 @@ class player:
         self.name = name
         self.health_points = 10
         self.knocked_out = False
-        self.hand = the_deck.top_card(3)
+        self.hand = [the_deck.top_card(), the_deck.top_card(), the_deck.top_card()]
         self.deck = the_deck
         self.discard_pile = []
-        self.defense_cards = []
+        self.defense_cards = {} # Key is card and value is n shields left
 
-    def is_attacked(self):
+    def is_attacked(self, n_hits:int = 1):
         if not self.knocked_out:
-            self.health_points = self.health_points - 1
+            # TODO Check for defence_cards
+            self.health_points = self.health_points - n_hits
             if self.health_points <= 0:
                 self.knocked_out = True
                 self.health_points = 0
@@ -396,13 +397,7 @@ class deck:
         return self
 
     def top_card(self, n_cards: int = 1):
-        if n_cards > len(self.cards):
-            current_n_cards = len(self.cards)
-            raise ValueError(f"Too many cards requested! {n_cards} > {current_n_cards}")
-        top_cards = []
-        for i in range(n_cards):
-            top_cards.append(self.cards.pop(0))
-        return top_cards
+        return(self.cards.pop(0))
 
 
 class card:

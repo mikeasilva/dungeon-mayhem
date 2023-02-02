@@ -30,7 +30,7 @@ def test_top_card():
     # The deck should have one less card
     assert len(get_card_names(deck)) == len(card_names) - 1
     # The name of the top card should be the first card of the whole deck
-    assert top_card[0].name == top_card_name
+    assert top_card.name == top_card_name
 
 
 def test_for_errors():
