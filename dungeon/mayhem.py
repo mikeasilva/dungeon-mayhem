@@ -31,9 +31,11 @@ class game:
             ]
 
         if battle_for_baldurs_gate:
-            deck += ["Jaheira", "Minsc and Boo"]
+            decks += ["Jaheira", "Minsc and Boo"]
 
-        self.active_players = random.sample(decks, n_players)
+        player_names = random.sample(decks, n_players)
+        self.active_players = player_names
+        self.players = [player(player_name) for player_name in player_names]
         self.knocked_out_players = []
         self.current_player = 0
         self.data = []
@@ -60,13 +62,14 @@ class game:
 
 class player:
     def __init__(self, name: str) -> None:
+        the_deck = deck(name).shuffle()
         self.name = name
         self.health_points = 10
         self.knocked_out = False
-        self.deck = deck(name).shuffle()
-        self.hand = []
+        self.hand = the_deck.top_card(3)
+        self.deck = the_deck
         self.discard_pile = []
-        self.defense_cards = {}
+        self.defense_cards = []
 
     def is_attacked(self):
         if not self.knocked_out:
@@ -202,12 +205,204 @@ class deck:
                 mighty_power_card("Whirling Axes"),
                 mighty_power_card("Whirling Axes"),
             ]
+        elif player_name == "Blorp":
+            self.cards = [
+                card("Acid Burp", attack=1, play_again=1),
+                card("Acid Burp", attack=1, play_again=1),
+                card("Fastest Cube Alive", attack=1, draw=1, healing=1),
+                card("Fastest Cube Alive", attack=1, draw=1, healing=1),
+                card("Fastest Cube Alive", attack=1, draw=1, healing=1),
+                card("Slime Time", play_again=2),
+                card("Slime Time", play_again=2),
+                card("Sugar Rush", draw=2),
+                card("Sugar Rush", draw=2),
+                card("Open Wide", draw=2, play_again=1),
+                card("D6 of Doom", attack=2),
+                card("Former Friends", defense=2),
+                card("Combat Cubed", attack=3),
+                card("Combat Cubed", attack=3),
+                card("Combat Cubed", attack=3),
+                card("Arcane Appetizer", attack=2, draw=1),
+                card("Arcane Appetizer", attack=2, draw=1),
+                card("Cubes Have Feelings Too", healing=1, play_again=1),
+                card("Cubes Have Feelings Too", healing=1, play_again=1),
+                card("Cleric a la Slime", healing=1, attack=2),
+                card("Cleric a la Slime", healing=1, attack=2),
+                mighty_power_card("Burped-Up Bones"),
+                mighty_power_card("Burped-Up Bones"),
+                mighty_power_card("Here I Come"),
+                mighty_power_card("Here I Come"),
+                mighty_power_card("Hugs!"),
+                mighty_power_card("Hugs!"),
+            ]
+        elif player_name == "Lord Cinderpuff":
+            self.cards = [
+                card("Bull Market", play_again=2),
+                card("Bull Market", play_again=2),
+                card("Peaceful Nap", draw=3),
+                card("Investment Opportunity", healing=1, draw=1),
+                card("Investment Opportunity", healing=1, draw=1),
+                card("Mob of Lawyers", defense=3),
+                card("Wall of Money", defense=2),
+                card("Wall of Money", defense=2),
+                card("Eviler Sneer", healing=1, play_again=1),
+                card("Eviler Sneer", healing=1, play_again=1),
+                card("Ancient Anger", attack=1, play_again=1),
+                card("Ancient Anger", attack=1, play_again=1),
+                card("Ancient Anger", attack=1, play_again=1),
+                card("Tooth and Claw", attack=3),
+                card("Tooth and Claw", attack=3),
+                card("Wisdom of Ages", draw=2),
+                card("Wisdom of Ages", draw=2),
+                card("Kobold Maid", defense=1, attack=1),
+                card("Kobold Maid", defense=1, attack=1),
+                card("Wing Buffet", attack=2),
+                card("Wing Buffet", attack=2),
+                mighty_power_card("Liquidate Assets"),
+                mighty_power_card("Liquidate Assets"),
+                mighty_power_card("Murders and Acquisitions"),
+                mighty_power_card("Murders and Acquisitions"),
+                mighty_power_card("Hostile Takeover"),
+                mighty_power_card("Hostile Takeover"),
+                mighty_power_card("Hostile Takeover"),
+            ]
+        elif player_name == "Dr. Tentaculous":
+            self.cards = [
+                card("Just a Nibble", draw=1, healing=1, play_again=1),
+                card("Receptionist", defense=1, attack=1),
+                card("Sip Tea", healing=2, draw=1),
+                card("Sip Tea", healing=2, draw=1),
+                card("Diagnosis Evil", draw=1, attack=2),
+                card("Diagnosis Evil", draw=1, attack=2),
+                card("Diagnosis Evil", draw=1, attack=2),
+                card("Id Insinuation", attack=1, play_again=1),
+                card("Id Insinuation", attack=1, play_again=1),
+                card("Id Insinuation", attack=1, play_again=1),
+                card("Ego Whip", attack=2),
+                card("Ego Whip", attack=2),
+                card("Superego Whip", attack=3),
+                card("Superego Whip", attack=3),
+                card("Enthralled Thrall", defense=2),
+                card("Enthralled Thrall", defense=2),
+                card("PhD in Psycology", play_again=2),
+                card("PhD in Psycology", play_again=2),
+                card("Relax at Work", draw=3),
+                card("Puppet Therapy", defense=1, attack=2),
+                card("Puppet Therapy", defense=1, attack=2),
+                card("Puppet Therapy", defense=1, attack=2),
+                mighty_power_card("Mind Blast"),
+                mighty_power_card("Mind Blast"),
+                mighty_power_card("Mind Games"),
+                mighty_power_card("Mind Games"),
+                mighty_power_card("Tell Me About Your Mother"),
+                mighty_power_card("Tell Me About Your Mother"),
+            ]
+        elif player_name == "Mimi LeChaise":
+            self.cards = [
+                card("Completely Safe Door", play_again=2),
+                card("Completely Safe Door", play_again=2),
+                card("Harmless Pile of Rocks", attack=2, play_again=1),
+                card("A Potted Plant (Honest!)", defense=1, attack=1),
+                card("Just Another Coat Rack", healing=2),
+                card("Just Another Coat Rack", healing=2),
+                card("Actually an Empty Chest", defense=1, draw=1),
+                card("Actually an Empty Chest", defense=1, draw=1),
+                card("A Well-Fitted Hat", attack=1, play_again=1),
+                card("A Well-Fitted Hat", attack=1, play_again=1),
+                card("Probably Just Dirty Socks", draw=3),
+                card("Probably Just Dirty Socks", draw=3),
+                card("A Delicous Pie!", attack=2, draw=1),
+                card("A Delicous Pie!", attack=2, draw=1),
+                card("Definitely Not a Trap", attack=2),
+                card("Definitely Not a Trap", attack=2),
+                card("Definitely Not a Trap", attack=2),
+                card("Non-Carnivorous Couch", attack=2, healing=1),
+                card("Non-Carnivorous Couch", attack=2, healing=1),
+                card("Not a Mimic (Really)", defense=2),
+                mighty_power_card("A Book (Cannot Bite)"),
+                mighty_power_card("A Book (Cannot Bite)"),
+                mighty_power_card("A Book (Cannot Bite)"),
+                mighty_power_card("Definitely Just a Mirror"),
+                mighty_power_card("Definitely Just a Mirror"),
+                mighty_power_card("It's Not a Trap"),
+                mighty_power_card("It's Not a Trap"),
+            ]
+        elif player_name == "Hoots McGoots":
+            self.cards = [
+                card("Look Out Below!", attack=2),
+                card("Look Out Below!", attack=2),
+                card("Strong as a Bear", attack=2, healing=1),
+                card("Strong as a Bear", attack=2, healing=1),
+                card("Talk to my Agent", defense=3),
+                card("Talk to my Agent", defense=3),
+                card("Send in the Clowns", defense=1, play_again=1),
+                card("Send in the Clowns", defense=1, play_again=1),
+                card("Send in the Clowns", defense=1, play_again=1),
+                card("Grand Finale", attack=3),
+                card("Grand Finale", attack=3),
+                card("Intermission", draw=2),
+                card("Wise as an Owl", draw=3),
+                card("The Hoots Fan Club", defense=2, healing=1),
+                card("The Hoots Fan Club", defense=2, healing=1),
+                card("Crushing Hug", attack=2, healing=2),
+                card("Crushing Hug", attack=2, healing=2),
+                card("Made You Look", draw=2, play_again=1),
+                card("Very Very Fast", attack=1, play_again=1),
+                card("Very Very Fast", attack=1, play_again=1),
+                card("Very Very Fast", attack=1, play_again=1),
+                card("Very Very Fast", attack=1, play_again=1),
+                mighty_power_card("To The Face"),
+                mighty_power_card("To The Face"),
+                mighty_power_card("Owlbear Boogie"),
+                mighty_power_card("Owlbear Boogie"),
+                mighty_power_card("For My Next Trick..."),
+                mighty_power_card("For My Next Trick..."),
+            ]
+        elif player_name == "Delilah Deathray":
+            self.cards = [
+                card("Fashion Police", defense=3),
+                card("Fashion Police", defense=3),
+                card("Tyranny of Beauty", attack=1, healing=1, play_again=1),
+                card("Rays for Days", play_again=2),
+                card("Rays for Days", play_again=2),
+                card("Me, Myself, and Eye", healing=1, draw=1),
+                card("Laser Show", attack=1, play_again=1),
+                card("Laser Show", attack=1, play_again=1),
+                card("Laser Show", attack=1, play_again=1),
+                card("Mirror, Mirror", defense=2),
+                card("Mirror, Mirror", defense=2),
+                card("Multitask", attack=2, healing=1),
+                card("Multitask", attack=2, healing=1),
+                card("Cuter Than You", draw=2),
+                card("Make it Work", healing=2, draw=1),
+                card("Make it Work", healing=2, draw=1),
+                card("Beauty Barrage", attack=3),
+                card("Beauty Barrage", attack=3),
+                card("Beauty Barrage", attack=3),
+                card("Double Trouble", attack=2),
+                card("Double Trouble", attack=2),
+                mighty_power_card("Death Ray"),
+                mighty_power_card("Death Ray"),
+                mighty_power_card("Charm Ray"),
+                mighty_power_card("Charm Ray"),
+                mighty_power_card("Praise Me"),
+                mighty_power_card("Praise Me"),
+            ]
         else:
             raise ValueError(f"Invalid player name: {player_name}")
 
     def shuffle(self):
         random.shuffle(self.cards)
         return self
+
+    def top_card(self, n_cards: int = 1):
+        if n_cards > len(self.cards):
+            current_n_cards = len(self.cards)
+            raise ValueError(f"Too many cards requested! {n_cards} > {current_n_cards}")
+        top_cards = []
+        for i in range(n_cards):
+            top_cards.append(self.cards.pop(0))
+        return top_cards
 
 
 class card:

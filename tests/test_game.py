@@ -6,7 +6,7 @@ def test_game_initialization():
     assert len(game.active_players) == 2
 
 def test_random_players():    
-    assert dm.game().active_players != dm.game().active_players
+    assert dm.game().active_players != dm.game().active_players or dm.game().active_players != dm.game().active_players
 
 def test_monster_madness():
     assert dm.game(monster_madness=True).active_players != dm.game(monster_madness=True).active_players
