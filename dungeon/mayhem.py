@@ -1,6 +1,7 @@
 import random
 import csv
 
+
 class game:
     def __init__(
         self,
@@ -9,7 +10,7 @@ class game:
         monster_madness=False,
         battle_for_baldurs_gate=False,
         log_this_game=False,
-        use_these_players=None
+        use_these_players=None,
     ) -> None:
         # Get the list of decks
         if base_deck:
@@ -40,7 +41,9 @@ class game:
         self.zone_of_influence = len(player_names) > 4
         self.vengeful_ghost = len(player_names) > 4
         self.active_players = player_names
-        self.players = dict(zip(player_names, [player(player_name) for player_name in player_names]))
+        self.players = dict(
+            zip(player_names, [player(player_name) for player_name in player_names])
+        )
         self.knocked_out_players = []
         self.round = 0
         self.log_this_game = log_this_game
@@ -48,7 +51,7 @@ class game:
             self.data = ["Round"] + player_names
             self.log_player_stats()
             self.log = []
-            
+
     def play_the_game(self):
         while len(self.active_players) > 1:
             self.play_one_round()
@@ -59,20 +62,17 @@ class game:
             self.log.append(message)
         return self
 
-
     def log_player_stats(self):
         if self.log_this_game:
             self.data.append([self.round] + self.get_player_stats())
         return self
 
-
     def get_log(self) -> list:
         return self.log
 
-
-    def get_player_stats(self)->list:
+    def get_player_stats(self) -> list:
         return [player.health_points for key, player in self.players.items()]
-    
+
     def save_stats(self):
         with open("stats.csv", "w") as f:
             writer = csv.writer(f)
@@ -84,7 +84,7 @@ class game:
         if self.log_this_game:
             self.log_this(player_name + " is knocked out.")
         return self
-    
+
     def s(self, n):
         if n == 1:
             return ""
@@ -101,12 +101,15 @@ class game:
                     # We assume the card will be discarded at the end of their turn
                     discard_card = True
                     self.log_this(f'{player_name} plays "{card.name}."')
-                    # Check 
+                    # Check
                     if not card.mighty_power_card:
                         if card.attack > 0:
                             if self.zone_of_influence:
                                 player_index = self.active_players.index(player_name)
-                                possible_targets = [self.active_players[player_index-1], self.active_players[player_index-1]]
+                                possible_targets = [
+                                    self.active_players[player_index - 1],
+                                    self.active_players[player_index - 1],
+                                ]
                             else:
                                 possible_targets = self.active_players.copy()
                                 possible_targets.remove(player_name)
@@ -114,25 +117,32 @@ class game:
                                 target_name = random.sample(possible_targets, 1)[0]
                                 target = self.players[target_name]
                                 target.is_attacked(card.attack)
-                                shields = target.get_shields()
-                                s = self.s(shields)
-                                self.log_this(f"  {player_name} deals {target_name} {card.attack} damage. Their health points are now at {target.health_points} and they have {shields} shield{s}.")
+                                self.log_this(
+                                    f"  {player_name} deals {target_name} {card.attack} damage. Their health points are now at {target.health_points}."
+                                )
                                 if target.health_points == 0:
                                     target.knocked_out = True
                                     self.knock_out_player(target_name)
                         if card.healing > 0:
                             player.heal(card.healing)
-                            self.log_this(f"  {player_name} gain {card.healing} health points.  Their health is now at {player.health_points}.")
-                        if card.draw > 0:                            
+                            self.log_this(
+                                f"  {player_name} gain {card.healing} health points.  Their health is now at {player.health_points}."
+                            )
+                        if card.draw > 0:
                             s = self.s(card.draw)
-                            # TODO draw 3 more cards
-                            #player.hand = player.deck.draw(card.draw)
+                            # TODO shuffle discards before drawing if needed
+                            new_cards = player.deck.draw(card.draw)
+                            player.hand = player.hand  # + new_cards
                             n_cards = len(player.hand)
-                            self.log_this(f"  Draws {card.draw} card{s}.  They have {n_cards} cards in their hand.")
+                            self.log_this(
+                                f"  Draws {card.draw} card{s}.  They have {n_cards} cards in their hand."
+                            )
 
                         if card.defense > 0:
                             s = self.s(card.defense)
-                            self.log_this(f"  Gives {player_name} {card.defense} shield{s}.")
+                            self.log_this(
+                                f"  Gives {player_name} {card.defense} shield{s}."
+                            )
                             player.defense_cards[card] = card.defense
                             discard_card = False
                         if card.play_again > 0:
@@ -149,7 +159,7 @@ class game:
                     player.hand = player.deck.draw(3)
         self.log_player_stats()
         return self
-    
+
     def print_log(self):
         for line in self.log:
             print(line)
@@ -164,29 +174,28 @@ class player:
         self.knocked_out = False
         self.hand = self.deck.draw(3)
         self.discard_pile = []
-        self.defense_cards = {} # Key is card and value is n shields left
-    
+        self.defense_cards = {}  # Key is card and value is n shields left
+
     def heal(self, health_points):
         self.health_points = min(self.health_points + health_points, 10)
         return self
-    
+
     def add_turns(self, n_turns):
         self.n_turns += n_turns
         return self
-    
+
     def reset(self):
         self.n_turns = 1
         return self
-    
+
     def get_shields(self):
         shields = 0
         if len(self.defense_cards) > 0:
             for card, defense_points in self.defense_cards.items():
                 shields += defense_points
         return shields
-        
 
-    def is_attacked(self, n_hits:int = 1):
+    def is_attacked(self, n_hits: int = 1):
         if not self.knocked_out:
             if len(self.defense_cards) > 0:
                 discard = []
@@ -194,14 +203,15 @@ class player:
                     if n_hits > 0:
                         if n_hits >= defense_points:
                             discard.append(card)
+                            n_hits -= defense_points
                         else:
                             self.defense_cards[card] -= n_hits
-                        n_hits -= defense_points
+                            n_hits = 0
+
                 if len(discard) > 0:
                     for card in discard:
                         self.defense_cards.pop(card)
                         self.discard_pile.append(card)
-
 
             self.health_points = max(self.health_points - n_hits, 0)
             self.knocked_out = self.health_points == 0
@@ -522,10 +532,10 @@ class deck:
     def shuffle(self):
         random.shuffle(self.cards)
         return self
-    
-    def draw(self, n_cards:int = 1):
+
+    def draw(self, n_cards: int = 1):
         if n_cards == 1:
-            return(self.cards.pop(0))
+            return self.cards.pop(0)
         else:
             cards = []
             for i in range(n_cards):
