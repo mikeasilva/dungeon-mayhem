@@ -13,7 +13,7 @@ def test_monster_madness():
 
 def test_logging():
     message = "testing"
-    game = dm.game()
+    game = dm.game(log_this_game=True)
     game.log_this(message)
     # Test that it returns a list
     assert game.get_log() == [message]
@@ -21,3 +21,11 @@ def test_logging():
     game.log_this(message).log_this("1").log_this("2").log_this("3")
     assert len(game.get_log()) == 5
 
+def test_use_these_players():
+    valid_players = ["Lia", "Sutha", "Oriax", "Azzan"]
+    game = dm.game(use_these_players=valid_players)
+    assert game.active_players == valid_players
+
+def test_should_raise_errors():
+    with pytest.raises(ValueError):
+        game = dm.game(use_these_players=["Larry", "Curley", "Moe"])

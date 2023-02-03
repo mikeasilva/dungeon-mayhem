@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 dungeon-mayhem.code-workspace
 tests/test_deck.py
+stats.csv
