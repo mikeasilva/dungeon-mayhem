@@ -131,3 +131,4 @@ dungeon-mayhem.code-workspace
 tests/test_deck.py
 stats.csv
 experiment.py
+log.txt
