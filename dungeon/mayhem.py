@@ -90,11 +90,11 @@ class game:
         df.write_csv("stats.csv", sep=",")
         return self
 
-    def possible_targets_for_a_vengeful_ghost(self, victims: list = []) -> list:
+    def possible_targets_for_a_vengeful_ghost(self, last_victim: str) -> list:
         possible_targets = []
         for player_name in self.active_players:
             player = self.players[player_name]
-            if player.health_points > 1 and player_name not in victims:
+            if player.health_points > 1 and player_name != last_victim:
                 possible_targets.append(player_name)
         return possible_targets
 
@@ -122,7 +122,7 @@ class game:
         for player_name, player in self.players.items():
             if player.vengeful_ghost:
                 possible_targets = self.possible_targets_for_a_vengeful_ghost(
-                    player.vengeful_ghost_victims
+                    player.last_vengeful_ghost_victim
                 )
                 if len(possible_targets) > 0:
                     target_name = random.sample(possible_targets, 1)[0]
@@ -131,7 +131,7 @@ class game:
                     self.log_this(
                         f"  The vengeful ghost of {player_name} attacks {target_name}. Their health points are now at {target.health_points}."
                     )
-                    player.vengeful_ghost_victims.append(target_name)
+                    player.last_vengeful_ghost_victim = target_name
                     if target.knocked_out:
                         self.knock_out_player(target_name)
             else:
@@ -238,7 +238,7 @@ class player:
         self.n_turns = 1
         self.knocked_out = False
         self.vengeful_ghost = False
-        self.vengeful_ghost_victims = []
+        self.last_vengeful_ghost_victim = ""
         self.knocked_out = []
         self.hand = self.deck.draw(3)
         self.defense_cards = {}  # Key is card and value is n shields left
