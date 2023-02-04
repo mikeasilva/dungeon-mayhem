@@ -1,5 +1,5 @@
 import random
-import csv
+import polars as pl
 
 
 class game:
@@ -31,6 +31,9 @@ class game:
         if battle_for_baldurs_gate:
             decks += ["Jaheira", "Minsc and Boo"]
 
+        if n_players > len(decks):
+            raise ValueError("There are not enough decks")
+
         if use_these_players is None:
             player_names = random.sample(decks, n_players)
         else:
@@ -48,7 +51,7 @@ class game:
         self.round = 0
         self.log_this_game = log_this_game
         if log_this_game:
-            self.data = ["Round"] + player_names
+            self.data = []
             self.log_player_stats()
             self.log = []
 
@@ -64,7 +67,12 @@ class game:
 
     def log_player_stats(self):
         if self.log_this_game:
-            self.data.append([self.round] + self.get_player_stats())
+            data = []
+            for player_name, player in self.players.items():
+                stats = player.get_stats()
+                stats["Round"] = self.round
+                data.append(stats)
+            self.data += data
         return self
 
     def get_log(self) -> list:
@@ -74,9 +82,9 @@ class game:
         return [player.health_points for key, player in self.players.items()]
 
     def save_stats(self):
-        with open("stats.csv", "w") as f:
-            writer = csv.writer(f)
-            writer.writerows(self.data)
+        df = pl.from_dicts(self.data)
+        df.write_csv("stats.csv", sep=",")
+        return self
 
     def knock_out_player(self, player_name):
         self.active_players.remove(player_name)
@@ -101,7 +109,7 @@ class game:
                     # We assume the card will be discarded at the end of their turn
                     discard_card = True
                     self.log_this(f'{player_name} plays "{card.name}."')
-                    # Check
+                
                     if not card.mighty_power_card:
                         if card.attack > 0:
                             if self.zone_of_influence:
@@ -149,6 +157,8 @@ class game:
                             s = self.s(card.play_again)
                             self.log_this(f"  Plays {card.play_again} more time{s}.")
                             player.add_turns(card.play_again)
+                    else:
+                        self.log_this(f"  What a mighty turn!")
                     player.n_turns -= 1
 
                 if discard_card:
@@ -177,8 +187,7 @@ class player:
         self.defense_cards = {}  # Key is card and value is n shields left
 
     def heal(self, health_points):
-        self.health_points = min(self.health_points + health_points, 10)
-        return self
+        return self.set_health_points(min(self.health_points + health_points, 10))
 
     def add_turns(self, n_turns):
         self.n_turns += n_turns
@@ -194,6 +203,21 @@ class player:
             for card, defense_points in self.defense_cards.items():
                 shields += defense_points
         return shields
+    
+    def get_stats(self):
+        return {
+            "Name": self.name,
+            "HP": self.health_points,
+            "Shields": self.get_shields(),
+            "Deck": len(self.deck.cards),
+            "Hand": len(self.hand),
+            "Discard Pile": len(self.discard_pile),
+            "Defense": len(self.defense_cards.keys())
+        }
+    
+    def set_health_points(self, health_points:int):
+        self.health_points = health_points
+        return self
 
     def is_attacked(self, n_hits: int = 1):
         if not self.knocked_out:
@@ -310,6 +334,7 @@ class deck:
                 mighty_power_card("Clever Disguise"),
                 mighty_power_card("Pick Pocket"),
                 mighty_power_card("Pick Pocket"),
+                mighty_power_card("Sneak Attack!"),
                 mighty_power_card("Sneak Attack!"),
             ]
         elif player_name == "Sutha":
@@ -519,6 +544,7 @@ class deck:
                 card("Beauty Barrage", attack=3),
                 card("Double Trouble", attack=2),
                 card("Double Trouble", attack=2),
+                mighty_power_card("Death Ray"),
                 mighty_power_card("Death Ray"),
                 mighty_power_card("Death Ray"),
                 mighty_power_card("Charm Ray"),
