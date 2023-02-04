@@ -90,11 +90,25 @@ class game:
         df.write_csv("stats.csv", sep=",")
         return self
 
+    def possible_targets_for_a_vengeful_ghost(self, victims: list = []) -> list:
+        possible_targets = []
+        for player_name in self.active_players:
+            player = self.players[player_name]
+            if player.health_points > 1 and player_name not in victims:
+                possible_targets.append(player_name)
+        return possible_targets
+
     def knock_out_player(self, player_name):
         self.active_players.remove(player_name)
         self.knocked_out_players.append(player_name)
-        if self.log_this_game:
-            self.log_this(player_name + " is knocked out.")
+        if self.vengeful_ghost:
+            self.log_this(
+                f"  {player_name} is knocked out and has become a vengeful ghost."
+            )
+            # Set the vengeful ghost flag
+            self.players[player_name].vengeful_ghost = True
+        else:
+            self.log_this(f"  {player_name} is knocked out.")
         return self
 
     def s(self, n):
@@ -104,84 +118,116 @@ class game:
 
     def play_one_round(self):
         self.round += 1
-        for player_name in self.active_players:
-            # Play the first card in their hand
-            player = self.players[player_name].reset()
-            while player.n_turns > 0:
-                if len(player.hand) > 0:
-                    card = player.hand.pop(0)
-                    # We assume the card will be discarded at the end of their turn
-                    discard_card = True
-                    self.log_this(f'{player_name} plays "{card.name}."')
-                
-                    if not card.mighty_power_card:
-                        if card.attack > 0:
-                            if self.zone_of_influence:
-                                player_index = self.active_players.index(player_name)
-                                possible_targets = [
-                                    self.active_players[player_index - 1],
-                                    self.active_players[player_index - 1],
-                                ]
-                            else:
-                                possible_targets = self.active_players.copy()
-                                possible_targets.remove(player_name)
-                            if len(possible_targets) > 0:
-                                target_name = random.sample(possible_targets, 1)[0]
-                                target = self.players[target_name]
-                                target.is_attacked(card.attack)
+        self.log_this(f"*** ROUND {self.round} ***")
+        for player_name, player in self.players.items():
+            if player.vengeful_ghost:
+                possible_targets = self.possible_targets_for_a_vengeful_ghost(
+                    player.vengeful_ghost_victims
+                )
+                if len(possible_targets) > 0:
+                    target_name = random.sample(possible_targets, 1)[0]
+                    target = self.players[target_name]
+                    target.is_attacked(1)
+                    self.log_this(
+                        f"  The vengeful ghost of {player_name} attacks {target_name}. Their health points are now at {target.health_points}."
+                    )
+                    player.vengeful_ghost_victims.append(target_name)
+                    if target.knocked_out:
+                        self.knock_out_player(target_name)
+            else:
+                player.reset()
+                while player.n_turns > 0 and len(self.active_players) > 1:
+                    if len(player.hand) > 0:
+                        card = player.hand.pop(0)
+                        # We assume the card will be discarded at the end of their turn
+                        discard_card = True
+                        self.log_this(f'{player_name} plays "{card.name}."')
+
+                        if not card.mighty_power_card:
+                            if card.attack > 0:
+                                if self.zone_of_influence:
+                                    player_index = self.active_players.index(
+                                        player_name
+                                    )
+                                    possible_targets = [
+                                        self.active_players[player_index - 1],
+                                        self.active_players[player_index - 1],
+                                    ]
+                                else:
+                                    possible_targets = self.active_players.copy()
+                                    possible_targets.remove(player_name)
+                                if len(possible_targets) > 0:
+                                    target_name = random.sample(possible_targets, 1)[0]
+                                    target = self.players[target_name]
+                                    target.is_attacked(card.attack)
+                                    target_shields = target.get_shields()
+                                    if target_shields > 0:
+                                        s = self.s(target_shields)
+                                        shield_message = (
+                                            f"They had {target_shields} shield{s}.  "
+                                        )
+                                    else:
+                                        shield_message = ""
+                                    self.log_this(
+                                        f"  {player_name} deals {target_name} {card.attack} damage. {shield_message}Their health points are now at {target.health_points}."
+                                    )
+
+                                    if target.knocked_out:
+                                        self.knock_out_player(target_name)
+
+                            if card.healing > 0:
+                                player.heal(card.healing)
                                 self.log_this(
-                                    f"  {player_name} deals {target_name} {card.attack} damage. Their health points are now at {target.health_points}."
+                                    f"  {player_name} gain {card.healing} health points.  Their health is now at {player.health_points}."
                                 )
-                                if target.health_points == 0:
-                                    target.knocked_out = True
-                                    self.knock_out_player(target_name)
 
-                        if card.healing > 0:
-                            player.heal(card.healing)
-                            self.log_this(
-                                f"  {player_name} gain {card.healing} health points.  Their health is now at {player.health_points}."
-                            )
+                            if card.draw > 0:
+                                s = self.s(card.draw)
+                                new_cards = player.deck.draw(card.draw)
+                                if isinstance(new_cards, list):
+                                    player.hand += new_cards
+                                else:
+                                    player.hand += [new_cards]
+                                n_cards = len(player.hand)
+                                self.log_this(
+                                    f"  Draws {card.draw} card{s}.  They have {n_cards} cards in their hand."
+                                )
 
-                        if card.draw > 0:
-                            s = self.s(card.draw)
-                            new_cards = player.deck.draw(card.draw)
-                            if isinstance(new_cards, list):
-                                player.hand += new_cards
-                            else:
-                                player.hand += [new_cards]
-                            n_cards = len(player.hand)
-                            self.log_this(
-                                f"  Draws {card.draw} card{s}.  They have {n_cards} cards in their hand."
-                            )
+                            if card.defense > 0:
+                                s = self.s(card.defense)
+                                self.log_this(
+                                    f"  Gives {player_name} {card.defense} shield{s}."
+                                )
+                                player.defense_cards[card] = card.defense
+                                discard_card = False
 
-                        if card.defense > 0:
-                            s = self.s(card.defense)
-                            self.log_this(
-                                f"  Gives {player_name} {card.defense} shield{s}."
-                            )
-                            player.defense_cards[card] = card.defense
-                            discard_card = False
+                            if card.play_again > 0:
+                                s = self.s(card.play_again)
+                                self.log_this(
+                                    f"  Plays {card.play_again} more time{s}."
+                                )
+                                player.add_turns(card.play_again)
+                        else:
+                            self.log_this(f"  What a mighty turn!")
+                        player.n_turns -= 1
 
-                        if card.play_again > 0:
-                            s = self.s(card.play_again)
-                            self.log_this(f"  Plays {card.play_again} more time{s}.")
-                            player.add_turns(card.play_again)
-                    else:
-                        self.log_this(f"  What a mighty turn!")
-                    player.n_turns -= 1
+                    if discard_card:
+                        player.deck.discard_pile.append(card)
 
-                if discard_card:
-                    player.deck.discard_pile.append(card)
-
-                if len(player.hand) == 0:
-                    # Draw 3 new cards
-                    player.hand = player.deck.draw(3)
+                    if len(player.hand) == 0:
+                        # Draw 3 new cards
+                        player.hand = player.deck.draw(3)
         self.log_player_stats()
         return self
 
     def print_log(self):
         for line in self.log:
             print(line)
+
+    def save_log(self):
+        with open("log.txt", "w") as file:
+            for line in self.log:
+                file.write(line + "\n")
 
 
 class player:
@@ -192,7 +238,7 @@ class player:
         self.n_turns = 1
         self.knocked_out = False
         self.vengeful_ghost = False
-        self.vengeful_ghost_targets = []
+        self.vengeful_ghost_victims = []
         self.knocked_out = []
         self.hand = self.deck.draw(3)
         self.defense_cards = {}  # Key is card and value is n shields left
@@ -214,7 +260,7 @@ class player:
             for card, defense_points in self.defense_cards.items():
                 shields += defense_points
         return shields
-    
+
     def get_stats(self):
         return {
             "Name": self.name,
@@ -223,10 +269,10 @@ class player:
             "Deck": len(self.deck.cards),
             "Hand": len(self.hand),
             "Discard Pile": len(self.deck.discard_pile),
-            "Defense": len(self.defense_cards.keys())
+            "Defense": len(self.defense_cards.keys()),
         }
-    
-    def set_health_points(self, health_points:int):
+
+    def set_health_points(self, health_points: int):
         self.health_points = health_points
         return self
 
@@ -570,7 +616,7 @@ class deck:
     def shuffle(self):
         random.shuffle(self.cards)
         return self
-    
+
     def discard(self, card):
         self.discard_pile.append(card)
         return self
