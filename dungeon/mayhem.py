@@ -62,6 +62,13 @@ class game:
         winner = self.active_players[0]
         self.log_this(f"{winner} Wins the game!!")
         self.winner = winner
+        # Log the carnage
+        self.log_this("\nCARNAGE REPORT")
+        self.log_this("==============")
+        for player_name, player in self.players.items():
+            n_knocked_out = len(player.has_knocked_out)
+            s = self.s(n_knocked_out)
+            self.log_this(f"{player_name} knocked out {n_knocked_out} player{s}!")
         return self
 
     def log_this(self, message: str):
@@ -98,17 +105,16 @@ class game:
                 possible_targets.append(player_name)
         return possible_targets
 
-    def knock_out_player(self, player_name):
+    def knock_out_player(self, player_name, knocked_out_by):
         self.active_players.remove(player_name)
         self.knocked_out_players.append(player_name)
+        ghost_message = ""
         if self.vengeful_ghost:
-            self.log_this(
-                f"  {player_name} is knocked out and has become a vengeful ghost."
-            )
-            # Set the vengeful ghost flag
             self.players[player_name].vengeful_ghost = True
-        else:
-            self.log_this(f"  {player_name} is knocked out.")
+            self.players[knocked_out_by].has_knocked_out.append(player_name)
+            ghost_message = " and has become a vengeful ghost"
+
+        self.log_this(f"  {player_name} is knocked out{ghost_message}.")
         return self
 
     def s(self, n):
@@ -133,7 +139,7 @@ class game:
                     )
                     player.last_vengeful_ghost_victim = target_name
                     if target.knocked_out:
-                        self.knock_out_player(target_name)
+                        self.knock_out_player(target_name, player_name)
             else:
                 player.reset()
                 while player.n_turns > 0 and len(self.active_players) > 1:
@@ -173,7 +179,7 @@ class game:
                                     )
 
                                     if target.knocked_out:
-                                        self.knock_out_player(target_name)
+                                        self.knock_out_player(target_name, player_name)
 
                             if card.healing > 0:
                                 player.heal(card.healing)
@@ -239,7 +245,7 @@ class player:
         self.knocked_out = False
         self.vengeful_ghost = False
         self.last_vengeful_ghost_victim = ""
-        self.knocked_out = []
+        self.has_knocked_out = []
         self.hand = self.deck.draw(3)
         self.defense_cards = {}  # Key is card and value is n shields left
 
