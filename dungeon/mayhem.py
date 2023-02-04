@@ -49,6 +49,7 @@ class game:
         )
         self.knocked_out_players = []
         self.round = 0
+        self.winner = "Unknown"
         self.log_this_game = log_this_game
         if log_this_game:
             self.data = []
@@ -58,6 +59,9 @@ class game:
     def play_the_game(self):
         while len(self.active_players) > 1:
             self.play_one_round()
+        winner = self.active_players[0]
+        self.log_this(f"{winner} Wins the game!!")
+        self.winner = winner
         return self
 
     def log_this(self, message: str):
@@ -131,16 +135,20 @@ class game:
                                 if target.health_points == 0:
                                     target.knocked_out = True
                                     self.knock_out_player(target_name)
+
                         if card.healing > 0:
                             player.heal(card.healing)
                             self.log_this(
                                 f"  {player_name} gain {card.healing} health points.  Their health is now at {player.health_points}."
                             )
+
                         if card.draw > 0:
                             s = self.s(card.draw)
-                            # TODO shuffle discards before drawing if needed
                             new_cards = player.deck.draw(card.draw)
-                            player.hand = player.hand  # + new_cards
+                            if isinstance(new_cards, list):
+                                player.hand += new_cards
+                            else:
+                                player.hand += [new_cards]
                             n_cards = len(player.hand)
                             self.log_this(
                                 f"  Draws {card.draw} card{s}.  They have {n_cards} cards in their hand."
@@ -153,6 +161,7 @@ class game:
                             )
                             player.defense_cards[card] = card.defense
                             discard_card = False
+
                         if card.play_again > 0:
                             s = self.s(card.play_again)
                             self.log_this(f"  Plays {card.play_again} more time{s}.")
@@ -162,7 +171,7 @@ class game:
                     player.n_turns -= 1
 
                 if discard_card:
-                    player.discard_pile.append(card)
+                    player.deck.discard_pile.append(card)
 
                 if len(player.hand) == 0:
                     # Draw 3 new cards
@@ -182,8 +191,10 @@ class player:
         self.health_points = 10
         self.n_turns = 1
         self.knocked_out = False
+        self.vengeful_ghost = False
+        self.vengeful_ghost_targets = []
+        self.knocked_out = []
         self.hand = self.deck.draw(3)
-        self.discard_pile = []
         self.defense_cards = {}  # Key is card and value is n shields left
 
     def heal(self, health_points):
@@ -211,7 +222,7 @@ class player:
             "Shields": self.get_shields(),
             "Deck": len(self.deck.cards),
             "Hand": len(self.hand),
-            "Discard Pile": len(self.discard_pile),
+            "Discard Pile": len(self.deck.discard_pile),
             "Defense": len(self.defense_cards.keys())
         }
     
@@ -235,7 +246,7 @@ class player:
                 if len(discard) > 0:
                     for card in discard:
                         self.defense_cards.pop(card)
-                        self.discard_pile.append(card)
+                        self.deck.discard_pile.append(card)
 
             self.health_points = max(self.health_points - n_hits, 0)
             self.knocked_out = self.health_points == 0
@@ -244,6 +255,7 @@ class player:
 
 class deck:
     def __init__(self, player_name: str) -> None:
+        self.discard_pile = []
         if player_name == "Azzan":
             self.cards = [
                 card("Burning Hands", attack=2),
@@ -558,16 +570,23 @@ class deck:
     def shuffle(self):
         random.shuffle(self.cards)
         return self
+    
+    def discard(self, card):
+        self.discard_pile.append(card)
+        return self
 
     def draw(self, n_cards: int = 1):
         if n_cards == 1:
-            return self.cards.pop(0)
+            the_draw = self.cards.pop(0)
         else:
-            cards = []
+            the_draw = []
             for i in range(n_cards):
-                cards.append(self.cards.pop(0))
-                # TODO Check if we need to shuffle discards
-            return cards
+                the_draw.append(self.draw())
+        if len(self.cards) == 0:
+            self.cards = self.discard_pile
+            self.discard_pile = []
+            self.shuffle()
+        return the_draw
 
 
 class card:

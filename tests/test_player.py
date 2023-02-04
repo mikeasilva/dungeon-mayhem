@@ -40,6 +40,6 @@ def test_shields_work():
     assert player.health_points == 10
     player.is_attacked()
     assert len(player.defense_cards) == 0
-    assert len(player.discard_pile) == 1
+    assert len(player.deck.discard_pile) == 1
     player.is_attacked()
     assert player.health_points == 9

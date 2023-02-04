@@ -46,6 +46,6 @@ def test_should_raise_errors():
 def test_one_round():
     game = dm.game(use_these_players=["Lia", "Sutha"])
     lia = game.players["Lia"]
-    assert len(lia.discard_pile) == 0
+    assert len(lia.deck.discard_pile) == 0
     game.play_one_round()
-    assert len(lia.discard_pile) > 0 or lia.get_shields() > 0
+    assert len(lia.deck.discard_pile) > 0 or lia.get_shields() > 0
